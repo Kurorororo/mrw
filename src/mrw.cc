@@ -316,12 +316,17 @@ vector<int> MRW(const vector<int> &initial, const vector<int> &fact_offset,
                 const TrieTable &table) {
   InitializeSchema(fact_offset, goal, actions, &schema);
   InitializeGraph(fact_offset, schema, &graph);
-  q_mda.resize(actions.names.size());
-  q_mha.resize(actions.names.size());
-  success.resize(actions.names.size());
-  faild.resize(actions.names.size());
-  vector<int> sequence;
+  int n_actions = actions.names.size();
+  q_mda.resize(n_actions);
+  std::fill(q_mda.begin(), q_mda.end(), 0.0);
+  q_mha.resize(n_actions);
+  std::fill(q_mha.begin(), q_mha.end(), 0.0);
+  success.resize(n_actions);
+  std::fill(success.begin(), success.end(), 0.0);
+  faild.resize(n_actions);
+  std::fill(faild.begin(), faild.end(), 0.0);
 
+  vector<int> sequence;
   vector<int> s = initial;
   ++generated;
   vector<int> helpful_actions;
@@ -339,6 +344,10 @@ vector<int> MRW(const vector<int> &initial, const vector<int> &fact_offset,
       h_min = initial_h_min;
       sequence.clear();
       counter = 0;
+      std::fill(q_mda.begin(), q_mda.end(), 0.0);
+      std::fill(q_mha.begin(), q_mha.end(), 0.0);
+      std::fill(success.begin(), success.end(), 0.0);
+      std::fill(faild.begin(), faild.end(), 0.0);
       std::cout << "Restart" << std::endl;
       PrintNewHeuristicValue(h_min, sequence.size());
     }
