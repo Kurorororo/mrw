@@ -26,9 +26,11 @@ int main(int argc, char *argv[]) {
   mrw::InitializeSchema(fact_offset, goal, actions, &schema);
   mrw::PlanningGraph graph;
   mrw::InitializeGraph(fact_offset, schema, &graph);
-  auto result = Search(initial, fact_offset, actions, schema, &graph);
+  std::vector<int> helpful_actions;
+  auto result = Search(initial, fact_offset, actions, schema, &graph,
+                       helpful_actions);
   std::reverse(result.begin(), result.end());
-  std::cout << "plan" << std::endl;
+  std::cout << "Plan" << std::endl;
   for (auto o : result) {
     if (o == -1) {
       std::cerr << "faild to solve problem" << std::endl;
@@ -37,7 +39,7 @@ int main(int argc, char *argv[]) {
     std::cout << actions.names[o] << std::endl;
   }
 
-  std::cout << "test" << std::endl;
+  std::cout << "Test" << std::endl;
   std::vector<int> facts(fact_offset.back(), 0);
   for (int i=0; i<initial.size(); ++i)
     facts[fact_offset[i]+initial[i]] = 1;

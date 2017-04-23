@@ -151,7 +151,7 @@ int ChooseAction(int index, int i, const vector<int> &fact_offset,
 
 vector<int> ExtractPlan(const vector<int> &fact_offset,
                         const Actions &actions, const GraphSchema &schema,
-                        PlanningGraph *graph) {
+                        PlanningGraph *graph, vector<int> &helpful_actions) {
   vector<int> result;
   graph->g_set.resize(graph->n_layers);
   for (auto g : schema.goal_facts)
@@ -182,16 +182,24 @@ vector<int> ExtractPlan(const vector<int> &fact_offset,
       result.push_back(o);
     }
   }
+  if (graph->g_set.size() > 1) {
+    for (auto g : graph->g_set[1]) {
+      for (auto o : schema.effect_map[g]) {
+        if (graph->action_layer_membership[o] == 0)
+          helpful_actions.push_back(o);
+      }
+    }
+  }
   return std::move(result);
 }
 
 vector<int> Search(const vector<int> &initial, const vector<int> &fact_offset,
                    const Actions &actions, const GraphSchema &schema,
-                   PlanningGraph *graph) {
+                   PlanningGraph *graph, vector<int> &helpful_actions) {
   ConstructGraph(initial, fact_offset, actions.effects, schema, graph);
   if (graph->n_layers == -1)
     return std::vector<int>{-1};
-  return ExtractPlan(fact_offset, actions, schema, graph);
+  return ExtractPlan(fact_offset, actions, schema, graph, helpful_actions);
 }
 
 } // namespace mrw

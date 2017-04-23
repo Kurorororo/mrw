@@ -47,7 +47,8 @@ void InitializeGraph(const std::vector<int> &fact_offset,
 std::vector<int> Search(const std::vector<int> &initial,
                         const std::vector<int> &fact_offset,
                         const Actions &actions, const GraphSchema &schema,
-                        PlanningGraph *graph);
+                        PlanningGraph *graph,
+                        std::vector<int> &helpful_actions);
 
 } // namespace mrw
 

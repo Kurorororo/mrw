@@ -282,6 +282,7 @@ void Parse(const std::string &filename, std::vector<int> &initial,
     std::cerr << kAxiomError << std::endl;
     exit(1);
   }
+  std::cout << "Parse succeed!" << std::endl;
 }
 
 } // namespace mrw
