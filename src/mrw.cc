@@ -29,8 +29,8 @@ constexpr double kMHATau = 10.0;
 
 GraphSchema schema;
 PlanningGraph graph;
-vector<int> q_mda;
-vector<int> q_mha;
+vector<double> q_mda;
+vector<double> q_mha;
 vector<int> success;
 vector<int> faild;
 
@@ -68,8 +68,6 @@ int PureRandomWalk(int h_min_old, const vector<int> &fact_offset,
     for (int j=0; j<length_walk; ++j) {
       auto a_set = FindFromTable(table, s_prime, fact_offset);
       if (a_set.empty()) {
-        for (auto v : footprints)
-          faild[v] += 1;
         ++faild_walks;
         break;
       }
@@ -85,21 +83,25 @@ int PureRandomWalk(int h_min_old, const vector<int> &fact_offset,
         sequence.insert(sequence.end(), footprints.begin(), footprints.end());
         return 0;
       }
-      if (j == length_walk-1) {
-        for (auto v : footprints)
-          success[v] += 1;
-      }
-    }
-    for (int j=0, n=q_mda.size(); j<n; ++j) {
-      q_mda[j] = success[j] + faild[j];
-      if (q_mda[j] != 0) q_mda[j] = 0 - (faild[j] / q_mda[j]);
     }
     vector<int> helpful_actions;
     int h = FF(s_prime, fact_offset, goal, actions, schema, &graph,
                helpful_actions);
     ++evaluated;
     for (auto a : helpful_actions)
-      ++q_mha[a];
+      q_mha[a] += 1.0;
+    if (h == -1) {
+      for (auto v : footprints)
+        faild[v] += 1;
+    } else {
+      for (auto v : footprints)
+        success[v] += 1;
+    }
+    for (int j=0, n=q_mda.size(); j<n; ++j) {
+      q_mda[j] = static_cast<double>(success[j] + faild[j]);
+      if (success[j] + faild[j] != 0)
+        q_mda[j] = 0.0 - (static_cast<double>(faild[j]) / q_mda[j]);
+    }
     if ((h < h_min || h_min == -1) && h != -1) {
       s_min = std::move(s_prime);
       h_min = h;
@@ -114,7 +116,10 @@ int PureRandomWalk(int h_min_old, const vector<int> &fact_offset,
         std::cout << "New length of random walk: " << length_walk << std::endl;
       }
     }
-    p = std::max(0.0, static_cast<double>(h_min_old - h_min));
+    if (h_min == -1)
+      p = 0.0;
+    else
+      p = std::max(0.0, static_cast<double>(h_min_old - h_min));
     if (i == 0) ap = p;
     if (p > ap) {
       std::cout << "Exploration stopped " << i+1 << " random walks"
@@ -134,13 +139,13 @@ int PureRandomWalk(int h_min_old, const vector<int> &fact_offset,
   return h_min;
 }
 
-int GibbsSampling(const vector<int> &v, const vector<int> &q, double tau,
+int GibbsSampling(const vector<int> &v, const vector<double> &q, double tau,
                   double value) {
   int n = v.size();
   std::vector<double> p(n);
   double sum = 0.0;
   for (int i=0; i<n; ++i) {
-    p[i] = exp(static_cast<double>(q[v[i]])/tau);
+    p[i] = exp(q[v[i]]/tau);
     sum += p[i];
   }
   for (int i=0; i<n; ++i) {
@@ -169,11 +174,7 @@ int MDARandomWalk(int h_min_old, const vector<int> &fact_offset,
     vector<int> footprints;
     for (int j=0; j<length_walk; ++j) {
       auto a_set = FindFromTable(table, s_prime, fact_offset);
-      if (a_set.empty()) {
-        for (auto v : footprints)
-          faild[v] += 1;
-        break;
-      }
+      if (a_set.empty()) break;
       int a = GibbsSampling(a_set, q_mda, kMDATau, dist(engine));
       ApplyEffect(actions.effects[a], s_prime);
       footprints.push_back(a);
@@ -183,19 +184,23 @@ int MDARandomWalk(int h_min_old, const vector<int> &fact_offset,
         sequence.insert(sequence.end(), footprints.begin(), footprints.end());
         return 0;
       }
-      if (j == length_walk-1) {
-        for (auto v : footprints)
-          success[v] += 1;
-      }
-    }
-    for (int j=0, n=q_mda.size(); j<n; ++j) {
-      q_mda[j] = success[j] + faild[j];
-      if (q_mda[j] != 0) q_mda[j] = 0 - (faild[j] / q_mda[j]);
     }
     vector<int> helpful_actions;
     int h = FF(s_prime, fact_offset, goal, actions, schema, &graph,
                helpful_actions);
     ++evaluated;
+    if (h == -1) {
+      for (auto v : footprints)
+        faild[v] += 1;
+    } else {
+      for (auto v : footprints)
+        success[v] += 1;
+    }
+    for (int j=0, n=q_mda.size(); j<n; ++j) {
+      q_mda[j] = static_cast<double>(success[j] + faild[j]);
+      if (success[j] + faild[j] != 0)
+        q_mda[j] = 0.0 - (static_cast<double>(faild[j]) / q_mda[j]);
+    }
     if ((h < h_min || h_min == -1) && h != -1) {
       s_min = std::move(s_prime);
       h_min = h;
@@ -210,7 +215,10 @@ int MDARandomWalk(int h_min_old, const vector<int> &fact_offset,
         std::cout << "New length of random walk: " << length_walk << std::endl;
       }
     }
-    p = std::max(0.0, static_cast<double>(h_min_old - h_min));
+    if (h_min == -1)
+      p = 0.0;
+    else
+      p = std::max(0.0, static_cast<double>(h_min_old - h_min));
     if (i == 0) ap = p;
     if (p > ap) {
       std::cout << "Exploration stopped " << i+1 << " random walks"
@@ -265,7 +273,7 @@ int MHARandomWalk(int h_min_old, const vector<int> &fact_offset,
                helpful_actions);
     ++evaluated;
     for (auto a : helpful_actions)
-      ++q_mha[a];
+      q_mha[a] += 1.0;
     if ((h < h_min || h_min == -1) && h != -1) {
       s_min = std::move(s_prime);
       h_min = h;
@@ -280,7 +288,10 @@ int MHARandomWalk(int h_min_old, const vector<int> &fact_offset,
         std::cout << "New length of random walk: " << length_walk << std::endl;
       }
     }
-    p = std::max(0.0, static_cast<double>(h_min_old - h_min));
+    if (h_min == -1)
+      p = 0.0;
+    else
+      p = std::max(0.0, static_cast<double>(h_min_old - h_min));
     if (i == 0) ap = p;
     if (p > ap) {
       std::cout << "Exploration stopped " << i+1 << " random walks"
