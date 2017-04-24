@@ -38,6 +38,9 @@ int total_walks = 0;
 int faild_walks = 0;
 int total_branches = 0;
 int total_actions = 0;
+bool is_initial_walk = true;
+double p;
+double ap;
 
 int generated = 0;
 int evaluated = 0;
@@ -56,14 +59,18 @@ inline void PrintLengthWalk(int length_walk) {
   std::cout << "New length of random walk: " << length_walk << std::endl;
 }
 
-inline bool UpdatePAP(int i, int h_min_old, int h_min, double *p, double *ap) {
+inline bool UpdatePAP(int h_min, int *h_min_old) {
   if (h_min == -1)
-    *p = 0.0;
+    p = 0.0;
   else
-    *p = std::max(0.0, static_cast<double>(h_min_old - h_min));
-  if (i == 0) *ap = *p;
-  bool result = *p > *ap;
-  *ap = (1.0-kAlpha)*(*ap) + kAlpha*(*p);
+    p = std::max(0.0, static_cast<double>(*h_min_old - h_min));
+  if (is_initial_walk) {
+    ap = p;
+    is_initial_walk = false;
+  }
+  bool result = p > ap;
+  ap = (1.0-kAlpha)*ap + kAlpha*p;
+  if (h_min != -1) *h_min_old = h_min;
   return result;
 }
 
@@ -110,7 +117,6 @@ int PureRandomWalk(int h_min_old, const vector<int> &fact_offset,
   vector<int> s_min;
   vector<int> best_sequence;
   int counter = 0;
-  double p, ap;
   std::random_device seed_gen;
   std::default_random_engine engine(seed_gen());
   for (int i=0; i<kNumWalk; ++i) {
@@ -153,7 +159,7 @@ int PureRandomWalk(int h_min_old, const vector<int> &fact_offset,
     } else {
       ++counter;
     }
-    if (!UpdatePAP(i, h_min_old, h_min, &p, &ap)) continue;
+    if (!UpdatePAP(h_min, &h_min_old)) continue;
     PrintStopWalk(i+1);
     UpdateState(s_min, best_sequence, s, sequence);
     return h_min;
@@ -225,7 +231,7 @@ int MDARandomWalk(int h_min_old, const vector<int> &fact_offset,
     } else {
       ++counter;
     }
-    if (!UpdatePAP(i, h_min_old, h_min, &p, &ap)) continue;
+    if (!UpdatePAP(h_min, &h_min_old)) continue;
     PrintStopWalk(i+1);
     UpdateState(s_min, best_sequence, s, sequence);
     return h_min;
@@ -282,7 +288,7 @@ int MHARandomWalk(int h_min_old, const vector<int> &fact_offset,
     } else {
       ++counter;
     }
-    if (!UpdatePAP(i, h_min_old, h_min, &p, &ap)) continue;
+    if (!UpdatePAP(h_min, &h_min_old)) continue;
     PrintStopWalk(i+1);
     UpdateState(s_min, best_sequence, s, sequence);
     return h_min;
@@ -331,6 +337,7 @@ vector<int> MRW(const vector<int> &initial, const vector<int> &fact_offset,
       std::fill(q_mha.begin(), q_mha.end(), 0.0);
       std::fill(success.begin(), success.end(), 0.0);
       std::fill(faild.begin(), faild.end(), 0.0);
+      is_initial_walk = true;
       std::cout << "Restart" << std::endl;
       PrintNewHeuristicValue(h_min, sequence.size());
     }
