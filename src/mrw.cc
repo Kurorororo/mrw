@@ -56,14 +56,15 @@ inline void PrintLengthWalk(int length_walk) {
   std::cout << "New length of random walk: " << length_walk << std::endl;
 }
 
-inline bool UpdatePAP(int i, int h_min_old, int h_min, double *p, double *ap) {
+inline bool UpdatePAP(int i, int h_min, int *h_min_old, double *p, double *ap) {
   if (h_min == -1)
     *p = 0.0;
   else
-    *p = std::max(0.0, static_cast<double>(h_min_old - h_min));
+    *p = std::max(0.0, static_cast<double>(*h_min_old - h_min));
   if (i == 0) *ap = *p;
   bool result = *p > *ap;
   *ap = (1.0-kAlpha)*(*ap) + kAlpha*(*p);
+  if (h_min != -1 && h_min < *h_min_old) *h_min_old = h_min;
   return result;
 }
 
@@ -153,7 +154,7 @@ int PureRandomWalk(int h_min_old, const vector<int> &fact_offset,
     } else {
       ++counter;
     }
-    if (!UpdatePAP(i, h_min_old, h_min, &p, &ap)) continue;
+    if (!UpdatePAP(i, h_min, &h_min_old, &p, &ap)) continue;
     PrintStopWalk(i+1);
     UpdateState(s_min, best_sequence, s, sequence);
     return h_min;
@@ -225,7 +226,7 @@ int MDARandomWalk(int h_min_old, const vector<int> &fact_offset,
     } else {
       ++counter;
     }
-    if (!UpdatePAP(i, h_min_old, h_min, &p, &ap)) continue;
+    if (!UpdatePAP(i, h_min, &h_min_old, &p, &ap)) continue;
     PrintStopWalk(i+1);
     UpdateState(s_min, best_sequence, s, sequence);
     return h_min;
@@ -282,7 +283,7 @@ int MHARandomWalk(int h_min_old, const vector<int> &fact_offset,
     } else {
       ++counter;
     }
-    if (!UpdatePAP(i, h_min_old, h_min, &p, &ap)) continue;
+    if (!UpdatePAP(i, h_min, &h_min_old, &p, &ap)) continue;
     PrintStopWalk(i+1);
     UpdateState(s_min, best_sequence, s, sequence);
     return h_min;
