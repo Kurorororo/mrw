@@ -70,7 +70,7 @@ inline bool UpdatePAP(int h_min, int *h_min_old) {
   }
   bool result = p > ap;
   ap = (1.0-kAlpha)*ap + kAlpha*p;
-  if (h_min != -1) *h_min_old = h_min;
+  if (h_min != -1 && h_min < *h_min_old) *h_min_old = h_min;
   return result;
 }
 
