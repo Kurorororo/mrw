@@ -196,7 +196,6 @@ int MDARandomWalk(int h_min_old, const vector<int> &fact_offset,
   vector<int> s_min;
   vector<int> best_sequence;
   int counter = 0;
-  double p, ap;
   std::random_device seed_gen;
   std::default_random_engine engine(seed_gen());
   std::uniform_real_distribution<> dist(0.0, 1.0);
@@ -252,7 +251,6 @@ int MHARandomWalk(int h_min_old, const vector<int> &fact_offset,
   vector<int> s_min;
   vector<int> best_sequence;
   int counter = 0;
-  double p, ap;
   std::random_device seed_gen;
   std::default_random_engine engine(seed_gen());
   std::uniform_real_distribution<> dist(0.0, 1.0);
