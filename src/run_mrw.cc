@@ -21,9 +21,8 @@ int main(int argc, char *argv[]) {
   std::vector<var_value_t> goal;
   mrw::Actions actions;
 
-  mrw::Parse(filename, initial, fact_offset, mutex_groups, goal, &actions);
-
   auto chrono_start = std::chrono::system_clock::now();
+  mrw::Parse(filename, initial, fact_offset, mutex_groups, goal, &actions);
   auto table = mrw::ConstructTable(actions.preconditions, fact_offset);
   auto result = mrw::MRW(initial, fact_offset, goal, actions, table);
   auto chrono_end = std::chrono::system_clock::now();
