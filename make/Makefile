@@ -7,10 +7,10 @@ INCS = -I$(INC_DIR) -I/usr/local/include/
 
 UNAME := $(shell uname -s)
 ifeq ($(UNAME),Linux)
-  CXX=g++
+  CXX=g++ -Wall
 endif
 ifeq ($(UNAME),Darwin)
-  CXX=/usr/bin/clang++
+  CXX=clang++ -Wall
 endif
 
 mrw:

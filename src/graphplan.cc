@@ -190,7 +190,7 @@ vector<int> ExtractPlan(const vector<int> &fact_offset,
       }
     }
   }
-  return std::move(result);
+  return result;
 }
 
 vector<int> Search(const vector<int> &initial, const vector<int> &fact_offset,

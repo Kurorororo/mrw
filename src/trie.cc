@@ -16,7 +16,7 @@ void InsertToTable(int query, std::vector<var_value_t> precondition,
   int j = 0;
   int max = precondition.size() - 1;
   int parent_prefix = 0;
-  int max_children = fact_offset.back();
+  size_t max_children = static_cast<size_t>(fact_offset.back());
   if (table->to_child.size() < max_children) {
     table->to_child.resize(max_children);
     table->to_data.resize(max_children);
@@ -73,7 +73,7 @@ std::vector<int> FindFromTable(const TrieTable &table,
                                const std::vector<int> &fact_offset) {
   std::vector<int> result;
   RecursiveFind(table, variables, fact_offset, 0, 0, result);
-  return std::move(result);
+  return result;
 }
 
 TrieTable ConstructTable(
@@ -83,7 +83,7 @@ TrieTable ConstructTable(
   int n = preconditions.size();
   for (int i=0; i<n; ++i)
     InsertToTable(i, preconditions[i], fact_offset, &table);
-  return std::move(table);
+  return table;
 }
 
 void PrintTable(const TrieTable &table) {
