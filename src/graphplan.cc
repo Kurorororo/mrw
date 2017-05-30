@@ -10,50 +10,48 @@ using std::vector;
 
 namespace mrw {
 
-void InitializeSchema(const vector<int> &fact_offset,
-                      const vector<var_value_t> &goal, const Actions &actions,
-                      GraphSchema *schema) {
-  schema->goal_size = goal.size();
-  int n_facts = fact_offset.back();
-  schema->is_goal.resize(n_facts);
+void InitializeSchema(const Domain &domain, GraphSchema *schema) {
+  schema->goal_size = domain.goal.size();
+  size_t fact_size = static_cast<size_t>(domain.fact_offset.back());
+  schema->is_goal.resize(fact_size);
   std::fill(schema->is_goal.begin(), schema->is_goal.end(), 0);
-  for (auto v : goal) {
+  for (auto v : domain.goal) {
     int var, value;
     DecodeVarValue(v, &var, &value);
-    int f = fact_offset[var] + value;
+    int f = domain.fact_offset[var] + value;
     schema->is_goal[f] = 1;
     schema->goal_facts.push_back(f);
   }
 
-  schema->precondition_map.resize(n_facts);
-  schema->effect_map.resize(n_facts);
-  int n_actions = actions.preconditions.size();
-  schema->precondition_size.resize(n_actions);
-  for (int i=0; i<n_actions; ++i) {
-    schema->precondition_size[i] = actions.preconditions[i].size();
-    for (auto v : actions.preconditions[i]) {
+  schema->precondition_map.resize(fact_size);
+  schema->effect_map.resize(fact_size);
+  size_t action_size = domain.preconditions.size();
+  schema->precondition_size.resize(action_size);
+  for (int i=0; i<action_size; ++i) {
+    schema->precondition_size[i] = domain.preconditions[i].size();
+    for (auto v : domain.preconditions[i]) {
       int var, value;
       DecodeVarValue(v, &var, &value);
-      schema->precondition_map[fact_offset[var]+value].push_back(i);
+      schema->precondition_map[domain.fact_offset[var]+value].push_back(i);
     }
-    for (auto v : actions.effects[i]) {
+    for (auto v : domain.effects[i]) {
       int var, value;
       DecodeVarValue(v, &var, &value);
-      schema->effect_map[fact_offset[var]+value].push_back(i);
+      schema->effect_map[domain.fact_offset[var]+value].push_back(i);
     }
   }
 }
 
-void InitializeGraph(const vector<int> &fact_offset,
-                     const GraphSchema &schema, PlanningGraph *graph) {
-  int n_facts = fact_offset.back();
-  graph->fact_layer_membership.resize(n_facts);
-  graph->closed.resize(n_facts);
-  graph->marked[0].resize(n_facts);
-  graph->marked[1].resize(n_facts);
-  int n_actions = schema.precondition_size.size();
-  graph->precondition_counter.resize(n_actions);
-  graph->action_layer_membership.resize(n_actions);
+void InitializeGraph(const Domain &domain, const GraphSchema &schema,
+                     PlanningGraph *graph) {
+  size_t fact_size = static_cast<size_t>(domain.fact_offset.back());
+  graph->fact_layer_membership.resize(fact_size);
+  graph->closed.resize(fact_size);
+  graph->marked[0].resize(fact_size);
+  graph->marked[1].resize(fact_size);
+  size_t action_size = schema.precondition_size.size();
+  graph->precondition_counter.resize(action_size);
+  graph->action_layer_membership.resize(action_size);
 }
 
 void ResetGraph(PlanningGraph *graph) {
@@ -87,17 +85,16 @@ int FactLayer(const GraphSchema &schema, PlanningGraph *graph) {
   return 0;
 }
 
-void ActionLayer(const vector<int> &fact_offset,
-                 const vector< vector<var_value_t> > &effects,
-                 const GraphSchema &schema, PlanningGraph *graph)  {
+void ActionLayer(const Domain &domain, const GraphSchema &schema,
+                 PlanningGraph *graph)  {
   while (!graph->scheduled_actions.empty()) {
     int o = graph->scheduled_actions.back();
     graph->scheduled_actions.pop_back();
     graph->action_layer_membership[o] = graph->n_layers;
-    for (auto v : effects[o]) {
+    for (auto v : domain.effects[o]) {
       int var, value;
       DecodeVarValue(v, &var, &value);
-      int f = fact_offset[var] + value;
+      int f = domain.fact_offset[var] + value;
       if (graph->closed[f] == 0) {
         graph->closed[f] = 1;
         graph->scheduled_facts.push_back(f);
@@ -106,12 +103,11 @@ void ActionLayer(const vector<int> &fact_offset,
   }
 }
 
-void ConstructGraph(const vector<int> &initial, const vector<int> &fact_offset,
-                    const vector< vector<var_value_t> > &effects,
+void ConstructGraph(const vector<int> &initial, const Domain &domain,
                     const GraphSchema &schema, PlanningGraph *graph) {
   ResetGraph(graph);
-  for (int i=0, n=initial.size(); i<n; ++i) {
-    int f = fact_offset[i] + initial[i];
+  for (size_t i=0, n=initial.size(); i<n; ++i) {
+    int f = domain.fact_offset[i] + initial[i];
     graph->closed[f] = 1;
     graph->scheduled_facts.push_back(f);
   }
@@ -121,24 +117,23 @@ void ConstructGraph(const vector<int> &initial, const vector<int> &fact_offset,
       ++graph->n_layers;
       return;
     }
-    ActionLayer(fact_offset, effects, schema, graph);
+    ActionLayer(domain, schema, graph);
     ++graph->n_layers;
   }
   graph->n_layers = -1;
 }
 
-int ChooseAction(int index, int i, const vector<int> &fact_offset,
-                 const vector< vector<var_value_t> > &preconditions,
+int ChooseAction(int index, int i, const Domain &domain,
                  const GraphSchema &schema, const PlanningGraph &graph) {
   int min = -1;
   int argmin = 0;
   for (auto o : schema.effect_map[index]) {
     if (graph.action_layer_membership[o] != i-1) continue;
     int difficulty = 0;
-    for (auto p : preconditions[o]) {
+    for (auto p : domain.preconditions[o]) {
       int var, value;
       DecodeVarValue(p, &var, &value);
-      difficulty += graph.fact_layer_membership[fact_offset[var]+value];
+      difficulty += graph.fact_layer_membership[domain.fact_offset[var]+value];
     }
     if (difficulty < min || min == -1) {
       min = difficulty;
@@ -149,8 +144,7 @@ int ChooseAction(int index, int i, const vector<int> &fact_offset,
   return argmin;
 }
 
-vector<int> ExtractPlan(const vector<int> &fact_offset,
-                        const Actions &actions, const GraphSchema &schema,
+vector<int> ExtractPlan(const Domain &domain, const GraphSchema &schema,
                         PlanningGraph *graph, vector<int> &helpful_actions) {
   vector<int> result;
   graph->g_set.resize(graph->n_layers);
@@ -162,20 +156,19 @@ vector<int> ExtractPlan(const vector<int> &fact_offset,
     std::fill(graph->marked[(i+1)%2].begin(), graph->marked[(i+1)%2].end(), 0);
     for (auto g : graph->g_set[i]) {
       if (graph->marked[i%2][g] == 1) continue;
-      int o = ChooseAction(g, i, fact_offset, actions.preconditions, schema,
-                           *graph);
-      for (auto v : actions.preconditions[o]) {
+      int o = ChooseAction(g, i, domain, schema, *graph);
+      for (auto v : domain.preconditions[o]) {
         int var, value;
         DecodeVarValue(v, &var, &value);
-        int f = fact_offset[var] + value;
+        int f = domain.fact_offset[var] + value;
         int j = graph->fact_layer_membership[f];
         if (j != 0 && graph->marked[(i+1)%2][f] == 0)
           graph->g_set[j].push_back(f);
       }
-      for (auto v : actions.effects[o]) {
+      for (auto v : domain.effects[o]) {
         int var, value;
         DecodeVarValue(v, &var, &value);
-        int f = fact_offset[var] + value;
+        int f = domain.fact_offset[var] + value;
         graph->marked[i%2][f] = 1;
         graph->marked[(i+1)%2][f] = 1;
       }
@@ -193,13 +186,13 @@ vector<int> ExtractPlan(const vector<int> &fact_offset,
   return result;
 }
 
-vector<int> Search(const vector<int> &initial, const vector<int> &fact_offset,
-                   const Actions &actions, const GraphSchema &schema,
-                   PlanningGraph *graph, vector<int> &helpful_actions) {
-  ConstructGraph(initial, fact_offset, actions.effects, schema, graph);
+vector<int> Search(const vector<int> &initial, const Domain &domain,
+                   const GraphSchema &schema, PlanningGraph *graph,
+                   vector<int> &helpful_actions) {
+  ConstructGraph(initial, domain, schema, graph);
   if (graph->n_layers == -1)
     return std::vector<int>{-1};
-  return ExtractPlan(fact_offset, actions, schema, graph, helpful_actions);
+  return ExtractPlan(domain, schema, graph, helpful_actions);
 }
 
 } // namespace mrw

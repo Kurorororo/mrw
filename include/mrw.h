@@ -11,11 +11,9 @@ namespace mrw {
 extern int generated;
 extern int evaluated;
 
-std::vector<int> MRW(const std::vector<int> &initial,
-                     const std::vector<int> &fact_offset,
-                     const std::vector<var_value_t> &goal,
-                     const Actions &actions, const TrieTable &table);
+std::vector<int> MRW(const std::vector<int> &initial, const Domain &domain,
+                     const TrieTable &table);
 
-} // namespace planning
+} // namespace mrw
 
 #endif // MRW_H_

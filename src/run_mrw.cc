@@ -16,15 +16,12 @@ int main(int argc, char *argv[]) {
   }
   std::string filename = argv[1];
   std::vector<int> initial;
-  std::vector<int> fact_offset;
-  std::vector< std::vector<var_value_t> > mutex_groups;
-  std::vector<var_value_t> goal;
-  mrw::Actions actions;
+  mrw::Domain domain;
 
   auto chrono_start = std::chrono::system_clock::now();
-  mrw::Parse(filename, initial, fact_offset, mutex_groups, goal, &actions);
-  auto table = mrw::ConstructTable(actions.preconditions, fact_offset);
-  auto result = mrw::MRW(initial, fact_offset, goal, actions, table);
+  mrw::Parse(filename, initial, &domain);
+  auto table = mrw::ConstructTable(domain.preconditions, domain.fact_offset);
+  auto result = mrw::MRW(initial, domain, table);
   auto chrono_end = std::chrono::system_clock::now();
 
   if (!result.empty() && result[0] == -1) {
@@ -41,9 +38,9 @@ int main(int argc, char *argv[]) {
   int step = result.size();
   int cost = 0;
   for (auto a : result) {
-    std::cout << actions.names[a] << "(" << actions.costs[a] << ")"
+    std::cout << domain.names[a] << "(" << domain.costs[a] << ")"
               << std::endl;
-    cost += actions.costs[a];
+    cost += domain.costs[a];
   }
 
   std::cout << "Plan length: " << step << " step(s)" << std::endl;

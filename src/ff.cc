@@ -6,18 +6,15 @@
 
 namespace mrw {
 
-int FF(const std::vector<int> &variables, const std::vector<int> &fact_offset,
-       const std::vector<var_value_t> &goal, const Actions &actions,
+int FF(const std::vector<int> &variables, const Domain &domain,
        const GraphSchema &schema, PlanningGraph *graph,
        std::vector<int> &helpful_actions) {
-  auto result = Search(variables, fact_offset, actions, schema, graph,
-                       helpful_actions);
+  auto result = Search(variables, domain, schema, graph, helpful_actions);
   int sum = 0;
   for (auto v : result) {
-    if (v == -1) {
-      return -1;
-    }
-    sum += actions.costs[v];
+    if (v == -1)
+      return INT_MAX;
+    sum += domain.costs[v];
   }
   return sum;
 }

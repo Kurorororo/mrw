@@ -31,22 +31,15 @@ struct PlanningGraph {
   std::vector<int> scheduled_actions;
   std::vector< std::vector<int> > g_set;
   std::array<std::vector<int>, 2> marked;
-
-  PlanningGraph() {}
-
-  ~PlanningGraph() {}
 };
 
-void InitializeSchema(const std::vector<int> &fact_offset,
-                      const std::vector<var_value_t> &goal,
-                      const Actions &actions, GraphSchema *schema);
+void InitializeSchema(const Domain &domain, GraphSchema *schema);
 
-void InitializeGraph(const std::vector<int> &fact_offset,
-                     const GraphSchema &schema, PlanningGraph *graph);
+void InitializeGraph(const Domain &domain, const GraphSchema &schema,
+                     PlanningGraph *graph);
 
 std::vector<int> Search(const std::vector<int> &initial,
-                        const std::vector<int> &fact_offset,
-                        const Actions &actions, const GraphSchema &schema,
+                        const Domain &domain, const GraphSchema &schema,
                         PlanningGraph *graph,
                         std::vector<int> &helpful_actions);
 

@@ -236,23 +236,20 @@ void ParseOperator(std::queue<std::string> &lines, int metric,
 }
 
 void ParseOperators(std::queue<std::string> &lines, int metric,
-                    Actions *actions) {
+                    Domain *domain) {
   int n = std::stoi(lines.front());
-  actions->names.resize(n);
-  actions->costs.resize(n);
-  actions->preconditions.resize(n);
-  actions->effects.resize(n);
+  domain->names.resize(n);
+  domain->costs.resize(n);
+  domain->preconditions.resize(n);
+  domain->effects.resize(n);
   lines.pop();
   for (int i=0; i<n; ++i)
-    ParseOperator(lines, metric, &actions->names[i], &actions->costs[i],
-                  actions->preconditions[i], actions->effects[i]);
+    ParseOperator(lines, metric, &domain->names[i], &domain->costs[i],
+                  domain->preconditions[i], domain->effects[i]);
 }
 
 void Parse(const std::string &filename, std::vector<int> &initial,
-           std::vector<int> &fact_offset,
-           std::vector< std::vector<var_value_t> > &mutex_groups,
-           std::vector<var_value_t> &goal,
-           Actions *actions) {
+           Domain *domain) {
   std::ifstream input;
   input.open(filename, std::ios::in);
   std::string buffer;
@@ -269,15 +266,15 @@ void Parse(const std::string &filename, std::vector<int> &initial,
   std::cout << "Parsing metric" << std::endl;
   int metric = ParseMetric(lines);
   std::cout << "Parsing variables" << std::endl;
-  ParseVariables(lines, initial, fact_offset);
+  ParseVariables(lines, initial, domain->fact_offset);
   std::cout << "Parsing mutex groups" << std::endl;
-  ParseMutexGroups(lines, mutex_groups);
+  ParseMutexGroups(lines, domain->mutex_groups);
   std::cout << "Parsing initial state" << std::endl;
   ParseState(lines, initial);
   std::cout << "Parsing goal" << std::endl;
-  ParseGoal(lines, goal);
+  ParseGoal(lines, domain->goal);
   std::cout << "Parsing operators" << std::endl;
-  ParseOperators(lines, metric, actions);
+  ParseOperators(lines, metric, domain);
   if (std::stoi(lines.front()) != 0) {
     std::cerr << kAxiomError << std::endl;
     exit(1);

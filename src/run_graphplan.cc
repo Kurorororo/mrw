@@ -17,28 +17,23 @@ int main(int argc, char *argv[]) {
   }
   std::string filename = argv[1];
   std::vector<int> initial;
-  std::vector<int> fact_offset;
-  std::vector< std::vector<var_value_t> > mutex_groups;
-  std::vector<var_value_t> goal;
-  mrw::Actions actions;
-  mrw::Parse(filename, initial, fact_offset, mutex_groups, goal,
-                  &actions);
+  mrw::Domain domain;
+  mrw::Parse(filename, initial, &domain);
   mrw::GraphSchema schema;
-  mrw::InitializeSchema(fact_offset, goal, actions, &schema);
+  mrw::InitializeSchema(domain, &schema);
   mrw::PlanningGraph graph;
-  mrw::InitializeGraph(fact_offset, schema, &graph);
+  mrw::InitializeGraph(domain, schema, &graph);
   std::vector<int> helpful_actions;
-  auto result = Search(initial, fact_offset, actions, schema, &graph,
-                       helpful_actions);
+  auto result = Search(initial, domain, schema, &graph, helpful_actions);
   std::cout << "Plan" << std::endl;
   for (int i=result.size()-1; i>-1; --i) {
     if (result[i] == -1) {
       std::cout << "faild to solve problem." << std::endl;
       exit(0);
     }
-    std::cout << actions.names[result[i]] << std::endl;
+    std::cout << domain.names[result[i]] << std::endl;
   }
   std::cout << "Helpful actinos" << std::endl;
   for (auto o : helpful_actions)
-    std::cout << actions.names[o] << std::endl;
+    std::cout << domain.names[o] << std::endl;
 }

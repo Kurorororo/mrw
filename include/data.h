@@ -20,7 +20,10 @@ inline void DecodeVarValue(var_value_t var_value, int *var, int *value) {
   *value = static_cast<int>(var_value & 0xFFFFFFFF);
 }
 
-struct Actions {
+struct Domain {
+  std::vector<int> fact_offset;
+  std::vector< std::vector<var_value_t> > mutex_groups;
+  std::vector<var_value_t> goal;
   std::vector<std::string> names;
   std::vector<int> costs;
   std::vector< std::vector<var_value_t> > preconditions;
@@ -28,7 +31,7 @@ struct Actions {
 };
 
 void ApplyEffect(const std::vector<var_value_t> &effect,
-                std::vector<int> &variables);
+                 std::vector<int> &variables);
 
 bool GoalCheck(const std::vector<var_value_t> &goal,
                const std::vector<int> &variables);

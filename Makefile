@@ -1,7 +1,7 @@
-SRC_DIR=../src
-INC_DIR=../include
-TEST_DIR=../test
-BIN_DIR=../bin
+SRC_DIR=./src
+INC_DIR=./include
+TEST_DIR=./test
+BIN_DIR=./bin
 
 INCS = -I$(INC_DIR) -I/usr/local/include/
 
@@ -13,10 +13,20 @@ ifeq ($(UNAME),Darwin)
   CXX=clang++ -Wall
 endif
 
-mrw:
+release:
 	$(CXX) -std=c++14 -O3 $(INCS) $(SRC_DIR)/run_mrw.cc $(SRC_DIR)/mrw.cc \
   $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc \
-  $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/mrw
+  $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/release
+
+debug:
+	$(CXX) -std=c++14 -g $(INCS) $(SRC_DIR)/run_mrw.cc $(SRC_DIR)/mrw.cc \
+  $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc \
+  $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/debug
+
+test_mrw:
+	$(CXX) -std=c++14 $(INCS) $(TEST_DIR)/test_mrw.cc $(SRC_DIR)/mrw.cc \
+  $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc \
+  $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/test
 
 graphplan:
 	$(CXX) -std=c++14 -O3 $(INCS) $(SRC_DIR)/run_graphplan.cc \
@@ -24,7 +34,7 @@ graphplan:
   -o $(BIN_DIR)/graphplan
 
 test_data:
-	$(CXX) -std=c++14 $(INCS) $(TEST_DIR)/test_data.cc $(TEST_DIR)/data.cc \
+	$(CXX) -std=c++14 $(INCS) $(TEST_DIR)/test_data.cc $(SRC_DIR)/data.cc \
   -o $(BIN_DIR)/test_data
 
 test_parser:
@@ -39,11 +49,6 @@ test_graphplan:
 	$(CXX) -std=c++14 $(INCS) $(TEST_DIR)/test_graphplan.cc \
   $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc $(SRC_DIR)/parser.cc \
   -o $(BIN_DIR)/test_graphplan
-
-test_mrw:
-	$(CXX) -std=c++14 $(INCS) $(TEST_DIR)/test_mrw.cc $(SRC_DIR)/mrw.cc \
-  $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc \
-  $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/test_mrw
 
 clean:
 	rm -f $(BIN_DIR)/*

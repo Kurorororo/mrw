@@ -16,19 +16,14 @@ int main(int argc, char *argv[]) {
   }
   std::string filename = argv[1];
   std::vector<int> initial;
-  std::vector<int> fact_offset;
-  std::vector< std::vector<var_value_t> > mutex_groups;
-  std::vector<var_value_t> goal;
-  mrw::Actions actions;
-  mrw::Parse(filename, initial, fact_offset, mutex_groups, goal,
-                  &actions);
+  mrw::Domain domain;
+  mrw::Parse(filename, initial, &domain);
   mrw::GraphSchema schema;
-  mrw::InitializeSchema(fact_offset, goal, actions, &schema);
+  mrw::InitializeSchema(domain, &schema);
   mrw::PlanningGraph graph;
-  mrw::InitializeGraph(fact_offset, schema, &graph);
+  mrw::InitializeGraph(domain, schema, &graph);
   std::vector<int> helpful_actions;
-  auto result = Search(initial, fact_offset, actions, schema, &graph,
-                       helpful_actions);
+  auto result = Search(initial, domain, schema, &graph, helpful_actions);
   std::reverse(result.begin(), result.end());
   std::cout << "Plan" << std::endl;
   for (auto o : result) {
@@ -36,35 +31,35 @@ int main(int argc, char *argv[]) {
       std::cerr << "faild to solve problem" << std::endl;
       exit(0);
     }
-    std::cout << actions.names[o] << std::endl;
+    std::cout << domain.names[o] << std::endl;
   }
 
   std::cout << "Test" << std::endl;
-  std::vector<int> facts(fact_offset.back(), 0);
+  std::vector<int> facts(domain.fact_offset.back(), 0);
   for (int i=0; i<initial.size(); ++i)
-    facts[fact_offset[i]+initial[i]] = 1;
+    facts[domain.fact_offset[i]+initial[i]] = 1;
   for (int i=0; i<result.size(); ++i) {
     int o = result[i];
-    for (auto f : actions.preconditions[o]) {
+    for (auto f : domain.preconditions[o]) {
       int var, value;
       mrw::DecodeVarValue(f, &var, &value);
-      if (facts[fact_offset[var]+value] == 0) {
+      if (facts[domain.fact_offset[var]+value] == 0) {
         std::cerr << "layer" << i << " precondition var" << var << "=" << value
-                  << " is not satisfied for action " << actions.names[o]
+                  << " is not satisfied for action " << domain.names[o]
                   << std::endl;
         exit(1);
       }
     }
-    for (auto f : actions.effects[o]) {
+    for (auto f : domain.effects[o]) {
       int var, value;
       mrw::DecodeVarValue(f, &var, &value);
-      facts[fact_offset[var]+value] = 1;
+      facts[domain.fact_offset[var]+value] = 1;
     }
   }
-  for (auto g : goal) {
+  for (auto g : domain.goal) {
     int var, value;
     mrw::DecodeVarValue(g, &var, &value);
-    if (facts[fact_offset[var]+value] == 0) {
+    if (facts[domain.fact_offset[var]+value] == 0) {
       std::cerr << "goal var" << var << "=" << value << " is not satisfied"
                 << std::endl;
       exit(1);

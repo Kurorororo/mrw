@@ -7,58 +7,54 @@
 #include "data.h"
 
 int main(int argc, char *argv[]) {
-  using planning::var_value_t;
+  using mrw::var_value_t;
   if (argc != 2) {
     std::cerr << "Usage: test_parser <filename>" << std::endl;
     exit(1);
   }
   std::string filename = argv[1];
   std::vector<int> initial;
-  std::vector<int> fact_offset;
-  std::vector< std::vector<var_value_t> > mutex_groups;
-  std::vector<var_value_t> goal;
-  planning::Actions actions;
-  planning::Parse(filename, initial, fact_offset, mutex_groups, goal,
-                  &actions);
+  mrw::Domain domain;
+  mrw::Parse(filename, initial, &domain);
 
   std::cout << "initial" << std::endl;
-  for (int i=0; i<initial.size(); ++i) {
+  for (size_t i=0; i<initial.size(); ++i) {
     std::cout << "var" << i << "=" << initial[i] << std::endl;
   }
   std::cout << "fact offset" << std::endl;
-  for (int i=0; i<fact_offset.size(); ++i) {
-    std::cout << "var" << i << "=0: " << fact_offset[i] << std::endl;
+  for (size_t i=0; i<domain.fact_offset.size(); ++i) {
+    std::cout << "var" << i << "=0: " << domain.fact_offset[i] << std::endl;
   }
   std::cout << "mutex_groups" << std::endl;
-  for (int i=0; i<mutex_groups.size(); ++i) {
-    for (auto v : mutex_groups[i]) {
+  for (int i=0; i<domain.mutex_groups.size(); ++i) {
+    for (auto v : domain.mutex_groups[i]) {
       int var, value;
-      planning::DecodeVarValue(v, &var, &value);
+      mrw::DecodeVarValue(v, &var, &value);
       std::cout << "var" << var << "=" << value << ", ";
     }
     std::cout << std::endl;
   }
   std::cout << "goal" << std::endl;
-  for (auto v : goal) {
+  for (auto v : domain.goal) {
     int var, value;
-    planning::DecodeVarValue(v, &var, &value);
+    mrw::DecodeVarValue(v, &var, &value);
     std::cout << "var" << var << " = " << value << std::endl;
   }
   std::cout << "operators" << std::endl;
-  for (int i=0; i<actions.names.size(); ++i) {
-    std::cout << actions.names[i] << std::endl;
-    std::cout << "cost = " << actions.costs[i] << std::endl;
+  for (int i=0; i<domain.names.size(); ++i) {
+    std::cout << domain.names[i] << std::endl;
+    std::cout << "cost = " << domain.costs[i] << std::endl;
     std::cout << "precondition" << std::endl;
-    for (auto v : actions.preconditions[i]) {
+    for (auto v : domain.preconditions[i]) {
       int var, value;
-      planning::DecodeVarValue(v, &var, &value);
+      mrw::DecodeVarValue(v, &var, &value);
       std::cout << "var" << var << "=" << value << ", ";
     }
     std::cout << std::endl;
     std::cout << "effect" << std::endl;
-    for (auto v : actions.effects[i]) {
+    for (auto v : domain.effects[i]) {
       int var, value;
-      planning::DecodeVarValue(v, &var, &value);
+      mrw::DecodeVarValue(v, &var, &value);
       std::cout << "var" << var <<  "=" << value << ", ";
     }
     std::cout << std::endl;

@@ -8,8 +8,7 @@
 
 namespace mrw {
 
-int FF(const std::vector<int> &variables, const std::vector<int> &fact_offset,
-       const std::vector<var_value_t> &goal, const Actions &actions,
+int FF(const std::vector<int> &variables, const Domain &domain,
        const GraphSchema &schema, PlanningGraph *graph,
        std::vector<int> &helpful_actions);
 

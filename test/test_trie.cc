@@ -25,6 +25,7 @@ void TestInsertToTable() {
   EncodeVarValue(2, 4, &precondition[2]);
   EncodeVarValue(3, 1, &precondition[3]);
   InsertToTable(0, precondition, fact_offset, &table);
+  PrintTable(table);
 
   std::cout << "Passed all test cases" << std::endl;
 }

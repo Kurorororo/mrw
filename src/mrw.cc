@@ -16,19 +16,17 @@ using std::vector;
 
 namespace mrw {
 
+constexpr int kPure = 0;
+constexpr int kMHA = 1;
+constexpr int kMDA = 2;
 constexpr double kAlpha = 0.9;
 constexpr int kNumWalk = 2000;
-constexpr int kLengthWalk = 10;
-constexpr int kMDALengthWalk = 1;
+constexpr int kLengthWalk[3] = {10, 10, 1};
 constexpr int kExtendingPeriod = 300;
-constexpr double kExtendingRate = 1.5;
-constexpr double kMDAExtendingRate = 2.0;
+constexpr double kExtendingRate[3] = {1.5, 1.5, 2.0};
 constexpr int kMaxSteps = 7;
-constexpr double kMDATau = 0.5;
-constexpr double kMHATau = 10.0;
+constexpr double kTau[3] = {0.0, 10.0, 0.5};
 
-GraphSchema schema;
-PlanningGraph graph;
 vector<double> q_mda;
 vector<double> q_mha;
 vector<int> success;
@@ -41,6 +39,9 @@ int total_actions = 0;
 bool is_initial_walk = true;
 double p;
 double ap;
+
+GraphSchema schema;
+PlanningGraph graph;
 
 int generated = 0;
 int evaluated = 0;
@@ -107,69 +108,6 @@ void UpdateMDA(int h, const vector<int> &footprints) {
   }
 }
 
-int PureRandomWalk(int h_min_old, const vector<int> &fact_offset,
-                   const vector<var_value_t> &goal, const Actions &actions,
-                   const TrieTable &table, vector<int> &s,
-                   vector<int> &sequence) {
-  int length_walk = kLengthWalk;
-  PrintLengthWalk(length_walk);
-  int h_min = -1;
-  vector<int> s_min;
-  vector<int> best_sequence;
-  int counter = 0;
-  std::random_device seed_gen;
-  std::default_random_engine engine(seed_gen());
-  for (int i=0; i<kNumWalk; ++i) {
-    ++total_walks;
-    auto s_prime = s;
-    vector<int> footprints;
-    if (counter > kExtendingPeriod) {
-      length_walk = ExtendLengthWalk(kExtendingRate, length_walk);
-      PrintLengthWalk(length_walk);
-      counter = 0;
-    }
-    for (int j=0; j<length_walk; ++j) {
-      auto a_set = FindFromTable(table, s_prime, fact_offset);
-      if (a_set.empty()) {
-        ++faild_walks;
-        break;
-      }
-      total_branches += a_set.size();
-      ++total_actions;
-      std::uniform_int_distribution<> dist(0, a_set.size()-1);
-      int a = a_set[dist(engine)];
-      ApplyEffect(actions.effects[a], s_prime);
-      footprints.push_back(a);
-      ++generated;
-      if (GoalCheck(goal, s_prime)) {
-        UpdateState(s_prime, footprints, s, sequence);
-        return 0;
-      }
-    }
-    vector<int> helpful_actions;
-    int h = FF(s_prime, fact_offset, goal, actions, schema, &graph,
-               helpful_actions);
-    ++evaluated;
-    for (auto a : helpful_actions)
-      q_mha[a] += 1.0;
-    UpdateMDA(h, footprints);
-    if ((h < h_min || h_min == -1) && h != -1) {
-      UpdateMinimum(h, s_prime, footprints, &h_min, s_min, best_sequence);
-      counter = 0;
-    } else {
-      ++counter;
-    }
-    if (!UpdatePAP(h_min, &h_min_old)) continue;
-    PrintStopWalk(i+1);
-    UpdateState(s_min, best_sequence, s, sequence);
-    return h_min;
-  }
-  PrintStopWalk(kNumWalk);
-  if (h_min == -1) return h_min_old;
-  UpdateState(s_min, best_sequence, s, sequence);
-  return h_min;
-}
-
 int GibbsSampling(const vector<int> &v, const vector<double> &q, double tau,
                   double value) {
   int n = v.size();
@@ -186,13 +124,11 @@ int GibbsSampling(const vector<int> &v, const vector<double> &q, double tau,
   return v.back();
 }
 
-int MDARandomWalk(int h_min_old, const vector<int> &fact_offset,
-                  const vector<var_value_t> &goal, const Actions &actions,
-                  const TrieTable &table, vector<int> &s,
-                  vector<int> &sequence) {
-  int length_walk = kMDALengthWalk;
+int RandomWalk(int h_min_old, int mode, const Domain &domain,
+               const TrieTable &table, vector<int> &s, vector<int> &sequence) {
+  int length_walk = kLengthWalk[mode];
   PrintLengthWalk(length_walk);
-  int h_min = -1;
+  int h_min = INT_MAX;
   vector<int> s_min;
   vector<int> best_sequence;
   int counter = 0;
@@ -200,87 +136,46 @@ int MDARandomWalk(int h_min_old, const vector<int> &fact_offset,
   std::default_random_engine engine(seed_gen());
   std::uniform_real_distribution<> dist(0.0, 1.0);
   for (int i=0; i<kNumWalk; ++i) {
+    ++total_walks;
     auto s_prime = s;
     vector<int> footprints;
     if (counter > kExtendingPeriod) {
-      length_walk = ExtendLengthWalk(kMDAExtendingRate, length_walk);
+      length_walk = ExtendLengthWalk(kExtendingRate[mode], length_walk);
       PrintLengthWalk(length_walk);
       counter = 0;
     }
     for (int j=0; j<length_walk; ++j) {
-      auto a_set = FindFromTable(table, s_prime, fact_offset);
-      if (a_set.empty()) break;
-      int a = GibbsSampling(a_set, q_mda, kMDATau, dist(engine));
-      ApplyEffect(actions.effects[a], s_prime);
+      auto a_set = FindFromTable(table, s_prime, domain.fact_offset);
+      if (a_set.empty()) {
+        ++faild_walks;
+        break;
+      }
+      total_branches += a_set.size();
+      ++total_actions;
+      int a;
+      if (mode == kPure) {
+        std::uniform_int_distribution<> int_dist(0, a_set.size()-1);
+        a = a_set[int_dist(engine)];
+      } else if (mode == kMHA) {
+        a = GibbsSampling(a_set, q_mha, kTau[mode], dist(engine));
+      } else {
+        a = GibbsSampling(a_set, q_mda, kTau[mode], dist(engine));
+      }
+      ApplyEffect(domain.effects[a], s_prime);
       footprints.push_back(a);
       ++generated;
-      if (GoalCheck(goal, s_prime)) {
+      if (GoalCheck(domain.goal, s_prime)) {
         UpdateState(s_prime, footprints, s, sequence);
         return 0;
       }
     }
     vector<int> helpful_actions;
-    int h = FF(s_prime, fact_offset, goal, actions, schema, &graph,
-               helpful_actions);
-    ++evaluated;
-    UpdateMDA(h, footprints);
-    if ((h < h_min || h_min == -1) && h != -1) {
-      UpdateMinimum(h, s_prime, footprints, &h_min, s_min, best_sequence);
-      counter = 0;
-    } else {
-      ++counter;
-    }
-    if (!UpdatePAP(h_min, &h_min_old)) continue;
-    PrintStopWalk(i+1);
-    UpdateState(s_min, best_sequence, s, sequence);
-    return h_min;
-  }
-  PrintStopWalk(kNumWalk);
-  if (h_min == -1) return h_min_old;
-  UpdateState(s_min, best_sequence, s, sequence);
-  return h_min;
-}
-
-int MHARandomWalk(int h_min_old, const vector<int> &fact_offset,
-                  const vector<var_value_t> &goal, const Actions &actions,
-                  const TrieTable &table, vector<int> &s,
-                  vector<int> &sequence) {
-  int length_walk = kLengthWalk;
-  PrintLengthWalk(length_walk);
-  int h_min = -1;
-  vector<int> s_min;
-  vector<int> best_sequence;
-  int counter = 0;
-  std::random_device seed_gen;
-  std::default_random_engine engine(seed_gen());
-  std::uniform_real_distribution<> dist(0.0, 1.0);
-  for (int i=0; i<kNumWalk; ++i) {
-    auto s_prime = s;
-    vector<int> footprints;
-    if (counter > kExtendingPeriod) {
-      length_walk = ExtendLengthWalk(kExtendingRate, length_walk);
-      PrintLengthWalk(length_walk);
-      counter = 0;
-    }
-    for (int j=0; j<length_walk; ++j) {
-      auto a_set = FindFromTable(table, s_prime, fact_offset);
-      if (a_set.empty()) break;
-      int a = GibbsSampling(a_set, q_mha, kMHATau, dist(engine));
-      ApplyEffect(actions.effects[a], s_prime);
-      footprints.push_back(a);
-      ++generated;
-      if (GoalCheck(goal, s_prime)) {
-        UpdateState(s_prime, footprints, s, sequence);
-        return 0;
-      }
-    }
-    vector<int> helpful_actions;
-    int h = FF(s_prime, fact_offset, goal, actions, schema, &graph,
-               helpful_actions);
+    int h = FF(s_prime, domain, schema, &graph, helpful_actions);
     ++evaluated;
     for (auto a : helpful_actions)
       q_mha[a] += 1.0;
-    if ((h < h_min || h_min == -1) && h != -1) {
+    UpdateMDA(h, footprints);
+    if (h < h_min) {
       UpdateMinimum(h, s_prime, footprints, &h_min, s_min, best_sequence);
       counter = 0;
     } else {
@@ -292,17 +187,14 @@ int MHARandomWalk(int h_min_old, const vector<int> &fact_offset,
     return h_min;
   }
   PrintStopWalk(kNumWalk);
-  if (h_min == -1) return h_min_old;
+  if (h_min == INT_MAX) return h_min_old;
   UpdateState(s_min, best_sequence, s, sequence);
   return h_min;
 }
 
-vector<int> MRW(const vector<int> &initial, const vector<int> &fact_offset,
-                const vector<var_value_t> &goal, const Actions &actions,
+vector<int> MRW(const vector<int> &initial, const Domain &domain,
                 const TrieTable &table) {
-  InitializeSchema(fact_offset, goal, actions, &schema);
-  InitializeGraph(fact_offset, schema, &graph);
-  int n_actions = actions.names.size();
+  size_t n_actions = domain.names.size();
   q_mda.resize(n_actions);
   std::fill(q_mda.begin(), q_mda.end(), 0.0);
   q_mha.resize(n_actions);
@@ -312,21 +204,23 @@ vector<int> MRW(const vector<int> &initial, const vector<int> &fact_offset,
   faild.resize(n_actions);
   std::fill(faild.begin(), faild.end(), 0.0);
 
+  InitializeSchema(domain, &schema);
+  InitializeGraph(domain, schema, &graph);
+
   vector<int> s = initial;
   ++generated;
   vector<int> helpful_actions;
-  int initial_h_min = FF(s, fact_offset, goal, actions, schema, &graph,
-                         helpful_actions);
+  int initial_h_min = FF(s, domain, schema, &graph, helpful_actions);
   ++evaluated;
-  if (initial_h_min == -1) return vector<int>{-1};
+  if (initial_h_min == INT_MAX) return vector<int>{-1};
   vector<int> sequence;
   int h_min = initial_h_min;
   PrintNewHeuristicValue(h_min, sequence.size());
   int counter = 0;
   double fail_rate = 0.0;
   double branching_factor = 0.0;
-  while (!GoalCheck(goal, s)) {
-    if (counter > kMaxSteps || FindFromTable(table, s, fact_offset).empty()) {
+  while (!GoalCheck(domain.goal, s)) {
+    if (counter > kMaxSteps) {
       s = initial;
       h_min = initial_h_min;
       sequence.clear();
@@ -339,23 +233,20 @@ vector<int> MRW(const vector<int> &initial, const vector<int> &fact_offset,
       std::cout << "Restart" << std::endl;
       PrintNewHeuristicValue(h_min, sequence.size());
     }
-    int h;
+    int mode = kPure;
     if (branching_factor > 1000.0) {
-      h = MHARandomWalk(h_min, fact_offset, goal, actions, table, s, sequence);
-    } else if (fail_rate > 0.5) {
-      h = MDARandomWalk(h_min, fact_offset, goal, actions, table, s, sequence);
-    } else {
-      h = PureRandomWalk(h_min, fact_offset, goal, actions, table, s,
-                         sequence);
-      fail_rate = static_cast<double>(faild_walks)
-                  / static_cast<double>(total_walks);
-      branching_factor = static_cast<double>(total_branches)
-                         / static_cast<double>(total_actions);
-      if (branching_factor > 1000.0)
-        std::cout << "Too many brances. Use MHA" << std::endl;
-      if (fail_rate > 0.5)
-        std::cout << "Too many dead end. Use MDA" << std::endl;
+      std::cout << "Too many brances. Use MHA" << std::endl;
+      mode = kMHA;
     }
+    else if (fail_rate > 0.5) {
+      std::cout << "Too many dead end. Use MDA" << std::endl;
+      mode = kMDA;
+    }
+    int h = RandomWalk(h_min, mode, domain, table, s, sequence);
+    fail_rate = static_cast<double>(faild_walks)
+                / static_cast<double>(total_walks);
+    branching_factor = static_cast<double>(total_branches)
+                      / static_cast<double>(total_actions);
     if (h < h_min) {
       h_min = h;
       counter = 0;

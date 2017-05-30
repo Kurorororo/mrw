@@ -5,9 +5,9 @@
 #include <iostream>
 
 int main() {
-  using planning::var_value_t;
-  using planning::EncodeVarValue;
-  using planning::DecodeVarValue;
+  using mrw::var_value_t;
+  using mrw::EncodeVarValue;
+  using mrw::DecodeVarValue;
 
   int var = 5;
   int value = 12;
