@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   std::vector<int> helpful_actions;
   auto result = Search(initial, domain, schema, &graph, helpful_actions);
   std::cout << "Plan" << std::endl;
-  for (int i=result.size()-1; i>-1; --i) {
+  for (size_t i=result.size()-1; i>-1; --i) {
     if (result[i] == -1) {
       std::cout << "faild to solve problem." << std::endl;
       exit(0);

@@ -1,5 +1,6 @@
 #include "mrw.h"
 
+#include <climits>
 #include <cmath>
 
 #include <algorithm>

@@ -1,5 +1,7 @@
 #include "ff.h"
 
+#include <climits>
+
 #include <vector>
 
 #include "data.h"
