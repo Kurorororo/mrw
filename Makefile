@@ -19,7 +19,7 @@ release:
   $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/release
 
 debug:
-	$(CXX) -std=c++14 -g $(INCS) $(SRC_DIR)/run_mrw.cc $(SRC_DIR)/mrw.cc \
+	$(CXX) -std=c++14 -g -pg $(INCS) $(SRC_DIR)/run_mrw.cc $(SRC_DIR)/mrw.cc \
   $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc \
   $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/debug
 
