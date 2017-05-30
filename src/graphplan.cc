@@ -27,7 +27,7 @@ void InitializeSchema(const Domain &domain, GraphSchema *schema) {
   schema->effect_map.resize(fact_size);
   size_t action_size = domain.preconditions.size();
   schema->precondition_size.resize(action_size);
-  for (int i=0; i<action_size; ++i) {
+  for (size_t i=0; i<action_size; ++i) {
     schema->precondition_size[i] = domain.preconditions[i].size();
     for (auto v : domain.preconditions[i]) {
       int var, value;
@@ -66,7 +66,7 @@ void ResetGraph(PlanningGraph *graph) {
             graph->precondition_counter.end(), 0);
   graph->scheduled_facts.clear();
   graph->scheduled_actions.clear();
-  for (int i=0, n=graph->g_set.size(); i<n; ++i)
+  for (size_t i=0, n=graph->g_set.size(); i<n; ++i)
     graph->g_set.clear();
 }
 
