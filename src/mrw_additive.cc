@@ -18,31 +18,27 @@ using std::vector;
 namespace mrw {
 
 constexpr int kPure = 0;
-constexpr int kMHA = 1;
-constexpr int kMDA = 2;
+constexpr int kMDA = 1;
 constexpr double kAlpha = 0.9;
 constexpr int kNumWalk = 2000;
-constexpr int kLengthWalk[3] = {10, 10, 1};
+constexpr int kLengthWalk[2] = {10, 1};
 constexpr int kExtendingPeriod = 300;
-constexpr double kExtendingRate[3] = {1.5, 1.5, 2.0};
+constexpr double kExtendingRate[2] = {1.5, 2.0};
 constexpr int kMaxSteps = 7;
-constexpr double kTau[3] = {0.0, 10.0, 0.5};
+constexpr double kTau[2] = {0.0, 0.5};
 
 vector<double> q_mda;
-vector<double> q_mha;
 vector<int> success;
 vector<int> faild;
 
 int total_walks = 0;
 int faild_walks = 0;
-int total_branches = 0;
-int total_actions = 0;
 bool is_initial_walk = true;
 double p;
 double ap;
 
-GraphSchema schema;
-PlanningGraph graph;
+std::vector< std::vector<int> > effect_map;
+std::array<std::vector<int>, 2> additive_table;
 
 int generated = 0;
 int evaluated = 0;
@@ -59,6 +55,20 @@ inline void PrintStopWalk(int i) {
 
 inline void PrintLengthWalk(int length_walk) {
   std::cout << "New length of random walk: " << length_walk << std::endl;
+}
+
+void InitializeEffectMap(const Domain &domain,
+                         std::vector< std::vector<int> > &effect_map) {
+  size_t fact_size = static_cast<size_t>(domain.fact_offset.back());
+  effect_map.resize(fact_size);
+  size_t action_size = domain.preconditions.size();
+  for (size_t i=0; i<action_size; ++i) {
+    for (auto v : domain.effects[i]) {
+      int var, value;
+      DecodeVarValue(v, &var, &value);
+      effect_map[domain.fact_offset[var]+value].push_back(i);
+    }
+  }
 }
 
 inline bool UpdatePAP(int h_min, int *h_min_old) {
@@ -151,14 +161,10 @@ int RandomWalk(int h_min_old, int mode, const Domain &domain,
         ++faild_walks;
         break;
       }
-      total_branches += a_set.size();
-      ++total_actions;
       int a;
       if (mode == kPure) {
         std::uniform_int_distribution<> int_dist(0, a_set.size()-1);
         a = a_set[int_dist(engine)];
-      } else if (mode == kMHA) {
-        a = GibbsSampling(a_set, q_mha, kTau[mode], dist(engine));
       } else {
         a = GibbsSampling(a_set, q_mda, kTau[mode], dist(engine));
       }
@@ -171,10 +177,8 @@ int RandomWalk(int h_min_old, int mode, const Domain &domain,
       }
     }
     vector<int> helpful_actions;
-    int h = FF(s_prime, domain, schema, &graph, helpful_actions);
+    int h = Additive(s_prime, domain, effect_map, additive_table);
     ++evaluated;
-    for (auto a : helpful_actions)
-      q_mha[a] += 1.0;
     UpdateMDA(h, footprints);
     if (h < h_min) {
       UpdateMinimum(h, s_prime, footprints, &h_min, s_min, best_sequence);
@@ -198,20 +202,20 @@ vector<int> MRW(const vector<int> &initial, const Domain &domain,
   size_t n_actions = domain.names.size();
   q_mda.resize(n_actions);
   std::fill(q_mda.begin(), q_mda.end(), 0.0);
-  q_mha.resize(n_actions);
-  std::fill(q_mha.begin(), q_mha.end(), 0.0);
   success.resize(n_actions);
   std::fill(success.begin(), success.end(), 0.0);
   faild.resize(n_actions);
   std::fill(faild.begin(), faild.end(), 0.0);
 
-  InitializeSchema(domain, &schema);
-  InitializeGraph(domain, schema, &graph);
+  size_t fact_size = static_cast<size_t>(domain.fact_offset.back());
+  InitializeEffectMap(domain, effect_map);
+  additive_table[0].resize(fact_size);
+  additive_table[1].resize(fact_size);
 
   vector<int> s = initial;
   ++generated;
   vector<int> helpful_actions;
-  int initial_h_min = FF(s, domain, schema, &graph, helpful_actions);
+  int initial_h_min = Additive(s, domain, effect_map, additive_table);
   ++evaluated;
   if (initial_h_min == INT_MAX) return vector<int>{-1};
   vector<int> sequence;
@@ -219,7 +223,6 @@ vector<int> MRW(const vector<int> &initial, const Domain &domain,
   PrintNewHeuristicValue(h_min, sequence.size());
   int counter = 0;
   double fail_rate = 0.0;
-  double branching_factor = 0.0;
   while (!GoalCheck(domain.goal, s)) {
     if (counter > kMaxSteps) {
       s = initial;
@@ -227,7 +230,6 @@ vector<int> MRW(const vector<int> &initial, const Domain &domain,
       sequence.clear();
       counter = 0;
       std::fill(q_mda.begin(), q_mda.end(), 0.0);
-      std::fill(q_mha.begin(), q_mha.end(), 0.0);
       std::fill(success.begin(), success.end(), 0.0);
       std::fill(faild.begin(), faild.end(), 0.0);
       is_initial_walk = true;
@@ -235,19 +237,13 @@ vector<int> MRW(const vector<int> &initial, const Domain &domain,
       PrintNewHeuristicValue(h_min, sequence.size());
     }
     int mode = kPure;
-    if (branching_factor > 1000.0) {
-      std::cout << "Too many brances. Use MHA" << std::endl;
-      mode = kMHA;
-    }
-    else if (fail_rate > 0.5) {
+    if (fail_rate > 0.5) {
       std::cout << "Too many dead end. Use MDA" << std::endl;
       mode = kMDA;
     }
     int h = RandomWalk(h_min, mode, domain, table, s, sequence);
     fail_rate = static_cast<double>(faild_walks)
                 / static_cast<double>(total_walks);
-    branching_factor = static_cast<double>(total_branches)
-                      / static_cast<double>(total_actions);
     if (h < h_min) {
       h_min = h;
       counter = 0;
