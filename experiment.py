@@ -11,6 +11,7 @@ from downward.reports.absolute import AbsoluteReport
 
 DIR_NAME = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(DIR_NAME, "mrw.py")
+FILE_PATH1 = os.path.join(DIR_NAME, "additive.py")
 
 BENCHMARKS_DIR = os.environ["DOWNWARD_BENCHMARKS"]
 ENV = LocalEnvironment(processes=1)
@@ -46,6 +47,21 @@ for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
     run.set_property('problem', task.problem)
     run.set_property('algorithm', 'mrw')
     run.set_property('id', ['mrw', task.domain, task.problem])
+    run.add_command('parse', ['{parser}'])
+
+for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
+    run = exp.add_run()
+    run.add_resource('domain', task.domain_file, symlink=True)
+    run.add_resource('problem', task.problem_file, symlink=True)
+    run.add_command(
+        'run-planner',
+        ['python', FILE_PATH1, '{domain}', '{problem}'],
+        time_limit=1800,
+        memory_limit=None)
+    run.set_property('domain', task.domain)
+    run.set_property('problem', task.problem)
+    run.set_property('algorithm', 'additive')
+    run.set_property('id', ['additive', task.domain, task.problem])
     run.add_command('parse', ['{parser}'])
 
 exp.add_report(AbsoluteReport(attributes=ATTRIBUTES), outfile='report.html')
