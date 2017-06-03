@@ -43,10 +43,13 @@ int main(int argc, char *argv[]) {
     cost += domain.costs[a];
   }
 
+  double nps = static_cast<double>(mrw::generated) / search_time;
+
   std::cout << "Plan length: " << step << " step(s)" << std::endl;
   std::cout << "Plan cost: " << cost << std::endl;
   std::cout << "Evaluated " << mrw::evaluated << " state(s)" << std::endl;
   std::cout << "Generated " << mrw::generated << " state(s)" << std::endl;
   std::cout << "Search time: " << search_time << "s" << std::endl;
+  std::cout << "Nodes per seconds: " << nps << std::endl;
   std::cout << "Solution found." << std::endl;
 }
