@@ -13,29 +13,29 @@ ifeq ($(UNAME),Darwin)
   CXX=clang++ -Wall
 endif
 
-release:
+ff:
 	$(CXX) -std=c++14 -O3 $(INCS) $(SRC_DIR)/run_mrw.cc $(SRC_DIR)/mrw.cc \
   $(SRC_DIR)/random_walk.cc $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc \
   $(SRC_DIR)/data.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
-  -o $(BIN_DIR)/release
+  -o $(BIN_DIR)/ff-ap
 
-debug:
+ff-debug:
 	$(CXX) -std=c++14 -g -pg $(INCS) $(SRC_DIR)/run_mrw.cc $(SRC_DIR)/mrw.cc \
   $(SRC_DIR)/random_walk.cc $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc \
   $(SRC_DIR)/data.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
-  -o $(BIN_DIR)/debug
+  -o $(BIN_DIR)/ff-debug
 
-test_mrw:
+ff-test:
 	$(CXX) -std=c++14 $(INCS) $(TEST_DIR)/test_mrw.cc $(SRC_DIR)/mrw.cc \
   $(SRC_DIR)/random_walk.cc $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc \
   $(SRC_DIR)/data.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
-  -o $(BIN_DIR)/test
+  -o $(BIN_DIR)/ff-test
 
 additive:
 	$(CXX) -std=c++14 -O3 $(INCS) $(SRC_DIR)/run_mrw.cc \
   $(SRC_DIR)/mrw_additive.cc $(SRC_DIR)/additive.cc $(SRC_DIR)/data.cc \
   $(SRC_DIR)/random_walk.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
-  -o $(BIN_DIR)/additive
+  -o $(BIN_DIR)/additive-ap
 
 graphplan:
 	$(CXX) -std=c++14 -O3 $(INCS) $(SRC_DIR)/run_graphplan.cc \
