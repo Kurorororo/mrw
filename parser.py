@@ -5,7 +5,7 @@ import re
 from lab.parser import Parser
 
 
-nps = re.compile("Nodes per seconds: ([0-9.]+)")
+nps = re.compile("Nodes per seconds: ([0-9.]+.*)")
 time = re.compile("Search time: ([0-9.]+)s")
 
 

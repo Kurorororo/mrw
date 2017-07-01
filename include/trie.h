@@ -21,6 +21,9 @@ std::vector<int> FindFromTable(const TrieTable &table,
                                const std::vector<int> &variables,
                                const std::vector<int> &fact_offset);
 
+int SampleFromTable(const TrieTable &table, const Domain &domain,
+                    const std::vector<int> &variables);
+
 void PrintTable(const TrieTable &table);
 
 TrieTable ConstructTable(

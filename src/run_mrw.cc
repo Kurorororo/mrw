@@ -11,7 +11,7 @@ using mrw::var_value_t;
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
-    std::cerr << "Usage: mrw <filename>" << std::endl;
+    std::cerr << "Usage: mrw output.sass" << std::endl;
     exit(1);
   }
   std::string filename = argv[1];

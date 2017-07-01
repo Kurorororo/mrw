@@ -15,23 +15,26 @@ endif
 
 release:
 	$(CXX) -std=c++14 -O3 $(INCS) $(SRC_DIR)/run_mrw.cc $(SRC_DIR)/mrw.cc \
-  $(SRC_DIR)/heuristic.cc $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc \
-  $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/release
+  $(SRC_DIR)/random_walk.cc $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc \
+  $(SRC_DIR)/data.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
+  -o $(BIN_DIR)/release
 
 debug:
 	$(CXX) -std=c++14 -g -pg $(INCS) $(SRC_DIR)/run_mrw.cc $(SRC_DIR)/mrw.cc \
-  $(SRC_DIR)/heuristic.cc $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc \
-  $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/debug
+  $(SRC_DIR)/random_walk.cc $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc \
+  $(SRC_DIR)/data.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
+  -o $(BIN_DIR)/debug
 
 test_mrw:
 	$(CXX) -std=c++14 $(INCS) $(TEST_DIR)/test_mrw.cc $(SRC_DIR)/mrw.cc \
-  $(SRC_DIR)/heuristic.cc $(SRC_DIR)/graphplan.cc $(SRC_DIR)/data.cc \
-  $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc -o $(BIN_DIR)/test
+  $(SRC_DIR)/random_walk.cc $(SRC_DIR)/ff.cc $(SRC_DIR)/graphplan.cc \
+  $(SRC_DIR)/data.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
+  -o $(BIN_DIR)/test
 
 additive:
 	$(CXX) -std=c++14 -O3 $(INCS) $(SRC_DIR)/run_mrw.cc \
-  $(SRC_DIR)/mrw_additive.cc $(SRC_DIR)/heuristic.cc $(SRC_DIR)/graphplan.cc \
-  $(SRC_DIR)/data.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
+  $(SRC_DIR)/mrw_additive.cc $(SRC_DIR)/additive.cc $(SRC_DIR)/data.cc \
+  $(SRC_DIR)/random_walk.cc $(SRC_DIR)/trie.cc $(SRC_DIR)/parser.cc \
   -o $(BIN_DIR)/additive
 
 graphplan:

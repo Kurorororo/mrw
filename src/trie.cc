@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <numeric>
 #include <iostream>
+#include <random>
 #include <utility>
 #include <vector>
 
@@ -73,6 +74,37 @@ std::vector<int> FindFromTable(const TrieTable &table,
                                const std::vector<int> &fact_offset) {
   std::vector<int> result;
   RecursiveFind(table, variables, fact_offset, 0, 0, result);
+  return result;
+}
+
+void RecursiveSample(const TrieTable &table, const Domain &domain,
+                     const std::vector<int> &variables, int index,
+                     size_t current, unsigned int *k, std::mt19937 &engine,
+                     int *result) {
+  int prefix = index - domain.fact_offset[current];
+  for (size_t i=current, n=variables.size(); i<n; ++i) {
+    int next = domain.fact_offset[i] + variables[i] + prefix;
+    int offset = table.to_data[next];
+    if (offset != -1) {
+      for (auto a : table.data[offset]) {
+        if (engine() % *k == 0)
+          *result = a;
+        ++(*k);
+      }
+    }
+    int child = table.to_child[next];
+    if (child == -1) continue;
+    RecursiveSample(table, domain, variables, child, i+1, k, engine, result);
+  }
+}
+
+int SampleFromTable(const TrieTable &table, const Domain &domain,
+                    const std::vector<int> &variables) {
+  int result = -1;
+  std::random_device seed_gen;
+  std::mt19937 engine(seed_gen());
+  unsigned int k = 1;
+  RecursiveSample(table, domain, variables, 0, 0, &k, engine, &result);
   return result;
 }
 
