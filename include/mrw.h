@@ -22,10 +22,6 @@ inline void PrintStopWalk(int i) {
   std::cout << "Exploration stopped " << i << " random walks" << std::endl;
 }
 
-inline void PrintLengthWalk(int length_walk) {
-  std::cout << "New length of random walk: " << length_walk << std::endl;
-}
-
 std::vector<int> MRW(const std::vector<int> &initial, const Domain &domain,
                      const TrieTable &table);
 

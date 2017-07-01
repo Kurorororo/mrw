@@ -17,10 +17,9 @@ using std::vector;
 
 namespace mrw {
 
-constexpr double kAlpha = 0.9;
-constexpr int kNumWalk = 2000;
+constexpr int kNumWalk = 5120;
 constexpr int kLengthWalk = 10;
-constexpr int kExtendingPeriod = 300;
+constexpr int kLengthWalkMax = 114;
 constexpr float kExtendingRate = 1.5;
 constexpr int kMaxSteps = 7;
 constexpr int kEpisodePoolSize = 50;
@@ -49,25 +48,6 @@ void InitializeEffectMap(const Domain &domain,
   }
 }
 
-inline bool UpdatePAP(int h_min, int *h_min_old) {
-  if (h_min == -1)
-    p = 0.0;
-  else
-    p = std::max(0.0, static_cast<double>(*h_min_old - h_min));
-  if (is_initial_walk) {
-    ap = p;
-    is_initial_walk = false;
-  }
-  bool result = p > ap;
-  ap = (1.0-kAlpha)*ap + kAlpha*p;
-  if (h_min != -1 && h_min < *h_min_old) *h_min_old = h_min;
-  return result;
-}
-
-inline int ExtendLengthWalk(int length_walk) {
-  return static_cast<int>(kExtendingRate * static_cast<float>(length_walk));
-}
-
 inline void UpdateMinimum(int h, vector<int> &s_prime, vector<int> &footprints,
                           int *h_min, vector<int> &s_min,
                           vector<int> &best_sequence) {
@@ -82,10 +62,8 @@ inline void UpdateState(vector<int> &s_prime, vector<int> &footprints,
   sequence.insert(sequence.end(), footprints.begin(), footprints.end());
 }
 
-int RandomWalk(int h_min_old, const Domain &domain, const TrieTable &table,
-               vector<int> &s, vector<int> &sequence) {
-  int length_walk = kLengthWalk;
-  PrintLengthWalk(length_walk);
+int RandomWalk(int h_min_old, int length_walk, const Domain &domain,
+               const TrieTable &table, vector<int> &s, vector<int> &sequence) {
   int h_min = INT_MAX;
   vector<int> s_min;
   vector<int> best_sequence;
@@ -93,11 +71,6 @@ int RandomWalk(int h_min_old, const Domain &domain, const TrieTable &table,
   for (int i=0; i<kNumWalk; ++i) {
     auto s_prime = s;
     vector<int> footprints;
-    if (counter > kExtendingPeriod) {
-      length_walk = ExtendLengthWalk(length_walk);
-      PrintLengthWalk(length_walk);
-      counter = 0;
-    }
     for (int j=0; j<length_walk; ++j) {
       int a = SampleFromTable(table, domain, s_prime);
       if (a == -1) break;
@@ -118,7 +91,6 @@ int RandomWalk(int h_min_old, const Domain &domain, const TrieTable &table,
     } else {
       ++counter;
     }
-    if (!UpdatePAP(h_min, &h_min_old)) continue;
     PrintStopWalk(i+1);
     UpdateState(s_min, best_sequence, s, sequence);
     return h_min;
@@ -146,25 +118,32 @@ vector<int> MRW(const vector<int> &initial, const Domain &domain,
   int h_min = initial_h_min;
   PrintNewHeuristicValue(h_min, sequence.size());
   int counter = 0;
+  int length_walk = kLengthWalk;
   while (!GoalCheck(domain.goal, s)) {
     if (counter > kMaxSteps) {
       std::cout << "restart" << std::endl;
       pool.Insert(h_min, sequence);
       pool.Sample(domain, initial, s, sequence);
-      h_min = Additive(s, domain, effect_map, additive_table);;
+      h_min = Additive(s, domain, effect_map, additive_table);
       ++evaluated;
+      length_walk = kLengthWalk;
       counter = 0;
       int g = calc_g(domain, sequence);
       PrintNewHeuristicValue(h_min, g);
     }
-    int h = RandomWalk(h_min, domain, table, s, sequence);
+    int h = RandomWalk(h_min, length_walk, domain, table, s, sequence);
     if (h < h_min) {
       h_min = h;
       counter = 0;
       int g = calc_g(domain, sequence);
+      length_walk = kLengthWalk;
       PrintNewHeuristicValue(h_min, g);
+      std::cout << "New length of random walk: " << length_walk << std::endl;
     } else {
       ++counter;
+      length_walk = static_cast<int>(length_walk * kExtendingRate);
+      length_walk = std::min(length_walk, kLengthWalkMax);
+      std::cout << "New length of random walk: " << length_walk << std::endl;
     }
   }
   return sequence;
