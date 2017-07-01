@@ -12,6 +12,8 @@ from downward.reports.absolute import AbsoluteReport
 DIR_NAME = os.path.dirname(os.path.abspath(__file__))
 ADDITIVE = os.path.join(DIR_NAME, "additive.py")
 MRW = os.path.join(DIR_NAME, "mrw.py")
+ADDITIVE_AP = os.path.join(DIR_NAME, "additive-ap.py")
+MRW_AP = os.path.join(DIR_NAME, "mrw-ap.py")
 
 # TIME_LIMIT = 60
 TIME_LIMIT = 300
@@ -80,8 +82,41 @@ for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
                                  'sas_plan'])
     run.add_command('parse', ['{parser}'])
 
+for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
+    run = exp.add_run()
+    run.add_resource('domain', task.domain_file, symlink=True)
+    run.add_resource('problem', task.problem_file, symlink=True)
+    run.add_command(
+        'run-planner',
+        ['python', ADDITIVE_AP, '{domain}', '{problem}'],
+        time_limit=TIME_LIMIT,
+        memory_limit=MEMORY_LIMIT)
+    run.set_property('domain', task.domain)
+    run.set_property('problem', task.problem)
+    run.set_property('algorithm', 'cpu-mrw-additive-ap')
+    run.set_property('id', ['cpu-mrw-additive-ap', task.domain, task.problem])
+    run.add_command('validate', ['validate', '{domain}', '{problem}',
+                                 'sas_plan'])
+    run.add_command('parse', ['{parser}'])
+
+for task in suites.build_suite(BENCHMARKS_DIR, SUITE):
+    run = exp.add_run()
+    run.add_resource('domain', task.domain_file, symlink=True)
+    run.add_resource('problem', task.problem_file, symlink=True)
+    run.add_command(
+        'run-planner',
+        ['python', MRW_AP, '{domain}', '{problem}'],
+        time_limit=TIME_LIMIT,
+        memory_limit=MEMORY_LIMIT)
+    run.set_property('domain', task.domain)
+    run.set_property('problem', task.problem)
+    run.set_property('algorithm', 'cpu-mrw-ff-ap')
+    run.set_property('id', ['cpu-mrw-ff-ap', task.domain, task.problem])
+    run.add_command('validate', ['validate', '{domain}', '{problem}',
+                                 'sas_plan'])
+    run.add_command('parse', ['{parser}'])
+
 exp.add_report(AbsoluteReport(attributes=ATTRIBUTES),
                outfile='cpu-mrw-additivee.html')
 
 exp.run_steps()
-
