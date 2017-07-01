@@ -22,8 +22,6 @@ constexpr int kMaxSteps = 7;
 constexpr int kEpisodePoolSize = 50;
 
 bool is_initial_walk = true;
-double p;
-double ap;
 
 std::vector< std::vector<int> > effect_map;
 std::vector<int> additive_table;

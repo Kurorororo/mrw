@@ -23,8 +23,6 @@ constexpr int kMaxSteps = 7;
 constexpr int kEpisodePoolSize = 50;
 
 bool is_initial_walk = true;
-double p;
-double ap;
 
 GraphSchema schema;
 PlanningGraph graph;
