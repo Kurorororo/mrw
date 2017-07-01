@@ -12,7 +12,7 @@ def main():
     args = [cmd, "--translate", argv[1], argv[2]]
     subprocess.check_call(args)
     DIR_NAME = os.path.dirname(os.path.abspath(__file__))
-    search = os.path.join(DIR_NAME, "bin/release")
+    search = os.path.join(DIR_NAME, "bin/ff")
     subprocess.check_call([search, "output.sas"])
 
 

@@ -1,9 +1,5 @@
 #include "mrw.h"
 
-#include <climits>
-#include <cmath>
-
-#include <algorithm>
 #include <iostream>
 #include <random>
 #include <vector>

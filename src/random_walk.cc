@@ -13,7 +13,7 @@ void EpisodePool::Insert(int h, const vector<int> &sequence) {
   auto p = q_.top();
   int max = p.first;
   int index;
-  if (size_ < sequences_.size()) {
+  if (size_ < static_cast<int>(sequences_.size())) {
     index = size_;
     ++size_;
   } else if (h < max) {

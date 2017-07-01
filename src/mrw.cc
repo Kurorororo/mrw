@@ -1,5 +1,6 @@
 #include "mrw.h"
 
+#include <limits>
 #include <iostream>
 #include <random>
 #include <vector>
@@ -47,7 +48,7 @@ inline void UpdateState(vector<int> &s_prime, vector<int> &footprints,
 
 int RandomWalk(int h_min_old, int length_walk, const Domain &domain,
                const TrieTable &table, vector<int> &s, vector<int> &sequence) {
-  int h_min = INT_MAX;
+  int h_min = std::numeric_limits<int>::max();
   vector<int> s_min;
   vector<int> best_sequence;
   int counter = 0;
