@@ -75,9 +75,6 @@ int RandomWalk(int h_min_old, int length_walk, const Domain &domain,
     } else {
       ++counter;
     }
-    PrintStopWalk(i+1);
-    UpdateState(s_min, best_sequence, s, sequence);
-    return h_min;
   }
   PrintStopWalk(kNumWalk);
   if (h_min == std::numeric_limits<int>::max()) return h_min_old;
