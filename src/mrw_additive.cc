@@ -1,5 +1,6 @@
 #include "mrw.h"
 
+#include <limits>
 #include <iostream>
 #include <random>
 #include <vector>
@@ -60,7 +61,7 @@ inline void UpdateState(vector<int> &s_prime, vector<int> &footprints,
 
 int RandomWalk(int h_min_old, int length_walk, const Domain &domain,
                const TrieTable &table, vector<int> &s, vector<int> &sequence) {
-  int h_min = INT_MAX;
+  int h_min = std::numeric_limits<int>::max();
   vector<int> s_min;
   vector<int> best_sequence;
   int counter = 0;
@@ -92,7 +93,7 @@ int RandomWalk(int h_min_old, int length_walk, const Domain &domain,
     return h_min;
   }
   PrintStopWalk(kNumWalk);
-  if (h_min == INT_MAX) return h_min_old;
+  if (h_min == std::numeric_limits<int>::max()) return h_min_old;
   UpdateState(s_min, best_sequence, s, sequence);
   return h_min;
 }
@@ -109,7 +110,7 @@ vector<int> MRW(const vector<int> &initial, const Domain &domain,
   vector<int> helpful_actions;
   int initial_h_min = Additive(s, domain, effect_map, additive_table);
   ++evaluated;
-  if (initial_h_min == INT_MAX) return vector<int>{-1};
+  if (initial_h_min == std::numeric_limits<int>::max()) return vector<int>{-1};
   vector<int> sequence;
   int h_min = initial_h_min;
   PrintNewHeuristicValue(h_min, sequence.size());

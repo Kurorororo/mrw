@@ -80,7 +80,7 @@ int RandomWalk(int h_min_old, int length_walk, const Domain &domain,
     return h_min;
   }
   PrintStopWalk(kNumWalk);
-  if (h_min == INT_MAX) return h_min_old;
+  if (h_min == std::numeric_limits<int>::max()) return h_min_old;
   UpdateState(s_min, best_sequence, s, sequence);
   return h_min;
 }
@@ -96,7 +96,7 @@ vector<int> MRW(const vector<int> &initial, const Domain &domain,
   vector<int> helpful_actions;
   int initial_h_min = FF(s, domain, schema, &graph, helpful_actions);
   ++evaluated;
-  if (initial_h_min == INT_MAX) return vector<int>{-1};
+  if (initial_h_min == std::numeric_limits<int>::max()) return vector<int>{-1};
   vector<int> sequence;
   int h_min = initial_h_min;
   PrintNewHeuristicValue(h_min, sequence.size());

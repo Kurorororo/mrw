@@ -1,5 +1,6 @@
 #include "additive.h"
 
+#include <limits>
 #include <iostream>
 #include <vector>
 
@@ -56,7 +57,7 @@ int Additive(const std::vector<int> &variables, const Domain &domain,
              std::vector<int> &table) {
   BellmanFord(variables, domain, effect_map, table);
   int h = Cost(domain, table, domain.goal);
-  if (h == -1) return INT_MAX;
+  if (h == -1) return std::numeric_limits<int>::max();
   return h;
 }
 
