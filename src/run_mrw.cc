@@ -1,4 +1,5 @@
 #include <chrono>
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -36,13 +37,16 @@ int main(int argc, char *argv[]) {
   std::cout << "Acutual search time: " << search_time << "s" << std::endl;
 
   int step = result.size();
+
+  std::ofstream sas_plan;
+  sas_plan.open("sas_plan", std::ios::out);
   int cost = 0;
   for (auto a : result) {
     std::cout << domain.names[a] << "(" << domain.costs[a] << ")"
               << std::endl;
+    sas_plan << "(" << domain.names[a] << ")" << std::endl;
     cost += domain.costs[a];
   }
-
   double nps = static_cast<double>(mrw::generated) / search_time;
 
   std::cout << "Plan length: " << step << " step(s)" << std::endl;
