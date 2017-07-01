@@ -36,10 +36,14 @@ int main(int argc, char *argv[]) {
   std::cout << "Acutual search time: " << search_time << "s" << std::endl;
 
   int step = result.size();
+
+  std::ofstream sas_plan;
+  sas_plan.open("sas_plan", std::ios::out);
   int cost = 0;
   for (auto a : result) {
     std::cout << domain.names[a] << "(" << domain.costs[a] << ")"
               << std::endl;
+    sas_plan << "(" << domain.names[a] << ")" << std::endl;
     cost += domain.costs[a];
   }
 
